@@ -39,6 +39,7 @@ io.on('connection', (socket) => {
     socket.emit('registered', { role: 'viewer' })
     if (hostSocket) {
       socket.emit('host-available')
+      hostSocket.emit('viewer-ready') // prévient le host qu'un viewer est prêt
     }
   })
 

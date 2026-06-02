@@ -1,0 +1,15 @@
+{
+  "name": "remotelink-host",
+  "version": "1.0.0",
+  "description": "RemoteLink host PC",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}
