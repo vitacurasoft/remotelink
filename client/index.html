@@ -13,51 +13,37 @@
       color: #fff;
       font-family: 'Segoe UI', sans-serif;
       height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Écran de connexion ── */
+    #connect-view {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      height: 100vh;
       gap: 24px;
-      overflow: hidden;
     }
-
-    /* Vue de connexion */
-    #connect-view { display: flex; flex-direction: column; align-items: center; gap: 20px; }
-
-    h1 {
-      font-size: 2rem;
-      font-weight: 300;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-    }
-
-    #status {
-      font-size: 0.9rem;
-      color: #888;
-      min-height: 1.2em;
-    }
+    h1 { font-size: 2rem; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; }
+    #status { font-size: 0.9rem; color: #888; min-height: 1.2em; }
     #status.connected { color: #4caf50; }
     #status.error     { color: #f44336; }
-
     #btn-connect {
-      padding: 14px 48px;
-      font-size: 1.1rem;
-      background: #1976d2;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.2s;
+      padding: 14px 48px; font-size: 1.1rem;
+      background: #1976d2; color: #fff;
+      border: none; border-radius: 6px; cursor: pointer;
     }
     #btn-connect:hover    { background: #1565c0; }
     #btn-connect:disabled { background: #333; cursor: default; color: #666; }
 
-    /* Vue streaming */
+    /* ── Écran streaming ── */
     #stream-view {
       display: none;
-      position: relative;
-      width: 100vw;
-      height: 100vh;
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 100;
     }
     #stream-view.active { display: block; }
 
@@ -65,56 +51,88 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      background: #000;
       display: block;
-      cursor: none;   /* cache le curseur local sur la vidéo */
       outline: none;
+      cursor: none;
     }
+    video#screen.released { cursor: default; }
 
-    /* HUD stats */
+    /* ── HUD stats ── */
     #hud {
-      position: absolute;
-      top: 10px;
-      right: 12px;
-      background: rgba(0,0,0,0.55);
+      position: fixed;
+      top: 10px; right: 12px;
+      background: rgba(0,0,0,0.5);
       color: #0f0;
-      font-family: monospace;
-      font-size: 11px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      pointer-events: none;
-      user-select: none;
+      font-family: monospace; font-size: 11px;
+      padding: 3px 8px; border-radius: 4px;
+      pointer-events: none; z-index: 110;
     }
 
-    /* Indicateur de reconnexion */
-    #reconnect-badge {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.75);
-      color: #f44336;
-      padding: 16px 32px;
-      border-radius: 8px;
-      font-size: 1rem;
+    /* ── Overlay mode navigation ── */
+    #overlay-released {
       display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 120;
+    }
+    #overlay-released.visible { display: flex; }
+    #overlay-released h2 { font-size: 1.4rem; font-weight: 300; letter-spacing: 2px; }
+    #overlay-released p  { font-size: 0.9rem; color: #aaa; }
+    .kbd {
+      display: inline-block;
+      background: #333; border: 1px solid #555;
+      border-radius: 4px; padding: 2px 8px;
+      font-family: monospace;
+    }
+
+    /* ── Toast 1er Échap ── */
+    #toast-esc {
+      display: none;
+      position: fixed;
+      bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: #fff; font-size: 0.82rem;
+      padding: 8px 20px; border-radius: 20px;
+      pointer-events: none; white-space: nowrap;
+      z-index: 130;
+    }
+    #toast-esc.visible { display: block; }
+
+    /* ── Badge reconnexion ── */
+    #reconnect-badge {
+      display: none;
+      position: fixed;
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: rgba(0,0,0,0.75);
+      color: #f44336; padding: 16px 32px;
+      border-radius: 8px; font-size: 1rem;
+      z-index: 140;
     }
     #reconnect-badge.visible { display: block; }
   </style>
 </head>
 <body>
 
-  <!-- Écran de connexion -->
   <div id="connect-view">
     <h1>RemoteLink</h1>
     <p id="status">Prêt</p>
     <button id="btn-connect">Connecter</button>
   </div>
 
-  <!-- Écran de streaming -->
   <div id="stream-view">
     <video id="screen" autoplay playsinline tabindex="0"></video>
     <div id="hud">-- fps</div>
+    <div id="overlay-released">
+      <h2>Mode Navigation</h2>
+      <p>Vous contrôlez la tablette</p>
+      <p>Double <span class="kbd">Échap</span> pour reprendre le contrôle du PC</p>
+    </div>
+    <div id="toast-esc">Appuyez encore sur <strong>Échap</strong> pour libérer la souris</div>
     <div id="reconnect-badge">Reconnexion...</div>
   </div>
 

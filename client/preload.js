@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('remotelink', {
-  onStatus: (callback) => ipcRenderer.on('status', (_, msg) => callback(msg))
+  onStatus:      (cb) => ipcRenderer.on('status', (_, msg) => cb(msg)),
+  setFullScreen: (val) => ipcRenderer.send('set-fullscreen', val)
 })
