@@ -103,6 +103,16 @@ ipcMain.on('tray-status', (_, status) => {
   tray.setContextMenu(buildTrayMenu(status))
 })
 
+// Cache la fenêtre dans le tray
+ipcMain.on('hide-window', () => win?.hide())
+
+// Lecture/écriture du démarrage automatique
+ipcMain.handle('get-autostart', () => app.getLoginItemSettings().openAtLogin)
+ipcMain.on('set-autostart', (_, enabled) => {
+  app.setLoginItemSettings({ openAtLogin: enabled, openAsHidden: enabled })
+  tray?.setContextMenu(buildTrayMenu())
+})
+
 // ── Démarrage ────────────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {

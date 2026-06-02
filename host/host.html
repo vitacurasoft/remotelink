@@ -16,7 +16,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 18px;
+      gap: 16px;
       user-select: none;
     }
     #indicator {
@@ -30,7 +30,7 @@
       box-shadow: 0 0 10px #4caf5088;
     }
     h2 {
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       font-weight: 300;
       letter-spacing: 4px;
       text-transform: uppercase;
@@ -39,17 +39,70 @@
       font-size: 0.82rem;
       color: #666;
       text-align: center;
-      padding: 0 24px;
+      padding: 0 16px;
       min-height: 1.2em;
     }
     #status.connected { color: #4caf50; }
     #status.error     { color: #f44336; }
+
+    .divider { width: 200px; height: 1px; background: #222; margin: 4px 0; }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      color: #888;
+      cursor: pointer;
+    }
+    .toggle-row:hover { color: #bbb; }
+    .toggle {
+      width: 36px; height: 20px;
+      background: #333;
+      border-radius: 10px;
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle.on { background: #1976d2; }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: left 0.2s;
+    }
+    .toggle.on::after { left: 19px; }
+
+    #btn-hide {
+      padding: 6px 20px;
+      font-size: 0.78rem;
+      background: transparent;
+      color: #555;
+      border: 1px solid #333;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    #btn-hide:hover { color: #888; border-color: #444; }
   </style>
 </head>
 <body>
   <div id="indicator"></div>
   <h2>RemoteLink</h2>
   <p id="status">Démarrage...</p>
+
+  <div class="divider"></div>
+
+  <div class="toggle-row" id="autostart-row">
+    <div class="toggle" id="autostart-toggle"></div>
+    <span>Démarrer avec Windows</span>
+  </div>
+
+  <button id="btn-hide">Masquer dans le tray ↓</button>
+
   <script src="host-renderer.js"></script>
 </body>
 </html>

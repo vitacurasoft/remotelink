@@ -7,8 +7,23 @@ const STUN_SERVERS = {
   ]
 }
 
-const statusEl    = document.getElementById('status')
-const indicatorEl = document.getElementById('indicator')
+const statusEl       = document.getElementById('status')
+const indicatorEl    = document.getElementById('indicator')
+const autostartToggle = document.getElementById('autostart-toggle')
+const btnHide        = document.getElementById('btn-hide')
+
+// Init toggle démarrage Windows
+window.remotelink.getAutostart().then(enabled => {
+  if (enabled) autostartToggle?.classList.add('on')
+})
+
+autostartToggle?.parentElement.addEventListener('click', async () => {
+  const current = autostartToggle.classList.contains('on')
+  autostartToggle.classList.toggle('on', !current)
+  window.remotelink.setAutostart(!current)
+})
+
+btnHide?.addEventListener('click', () => window.remotelink.hideWindow())
 
 let socket         = null
 let peerConnection = null
