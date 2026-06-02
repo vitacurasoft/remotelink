@@ -3,7 +3,7 @@ const path = require('path')
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1200,
+    width: 1280,
     height: 800,
     title: 'RemoteLink',
     webPreferences: {
@@ -12,12 +12,11 @@ function createWindow() {
       nodeIntegration: false
     }
   })
-
   win.loadFile('index.html')
+  win.setMenuBarVisibility(false)
 }
 
 app.whenReady().then(createWindow)
-
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })

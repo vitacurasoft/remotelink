@@ -29,11 +29,16 @@ ipcMain.handle('get-screen-source', async () => {
   return sources[0]?.id || null
 })
 
-// Reçoit les événements clavier/souris du renderer et les exécute
+// Exécute les événements clavier/souris
 ipcMain.on('input-event', (_, event) => {
   const display = screen.getPrimaryDisplay()
   const { width, height } = display.bounds
   inputController.handleInput(event, width, height)
+})
+
+// Minimise la fenêtre host quand le streaming démarre
+ipcMain.on('minimize-window', () => {
+  if (win) win.minimize()
 })
 
 app.whenReady().then(() => {
