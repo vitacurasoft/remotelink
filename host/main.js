@@ -6,15 +6,19 @@ let win  = null
 let tray = null
 let isQuitting = false
 
+// Détecte si lancé automatiquement au démarrage Windows
+const IS_AUTOSTART = process.argv.includes('--autostart')
+
 // ── Fenêtre principale ───────────────────────────────────────────────────────
 
 function createWindow() {
   win = new BrowserWindow({
     width: 360,
-    height: 280,
+    height: 300,
     resizable: false,
     title: 'RemoteLink Host',
-    skipTaskbar: false,
+    show: false,          // ne s'affiche jamais automatiquement
+    skipTaskbar: true,    // masqué de la barre des tâches quand caché
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -54,7 +58,7 @@ function buildTrayMenu(status = 'En attente...') {
       }
     },
     { type: 'separator' },
-    { label: 'Afficher la fenêtre', click: () => win?.show() },
+    { label: 'Afficher la fenêtre', click: () => { win?.show(); win?.setSkipTaskbar(false); win?.focus() } },
     { label: 'Quitter RemoteLink', click: () => { isQuitting = true; app.quit() } }
   ])
 }
@@ -72,7 +76,15 @@ function createTray() {
 
   // Clic gauche → affiche/masque la fenêtre
   tray.on('click', () => {
-    if (win) win.isVisible() ? win.hide() : win.show()
+    if (!win) return
+    if (win.isVisible()) {
+      win.hide()
+      win.setSkipTaskbar(true)
+    } else {
+      win.show()
+      win.setSkipTaskbar(false)
+      win.focus()
+    }
   })
 }
 
@@ -109,7 +121,11 @@ ipcMain.on('hide-window', () => win?.hide())
 // Lecture/écriture du démarrage automatique
 ipcMain.handle('get-autostart', () => app.getLoginItemSettings().openAtLogin)
 ipcMain.on('set-autostart', (_, enabled) => {
-  app.setLoginItemSettings({ openAtLogin: enabled, openAsHidden: enabled })
+  app.setLoginItemSettings({
+    openAtLogin: enabled,
+    // Passe --autostart pour détecter le lancement auto et rester caché
+    args: enabled ? ['--autostart'] : []
+  })
   tray?.setContextMenu(buildTrayMenu())
 })
 
@@ -120,9 +136,12 @@ app.whenReady().then(() => {
   createTray()
   createWindow()
 
-  // Si lancé au démarrage Windows → reste caché, pas besoin d'afficher la fenêtre
-  const { wasOpenedAsHidden } = app.getLoginItemSettings()
-  if (!wasOpenedAsHidden) win.show()
+  // Lance normalement → affiche la fenêtre
+  // Lance au démarrage Windows (--autostart) → reste caché dans le tray
+  if (!IS_AUTOSTART) {
+    win.show()
+    win.setSkipTaskbar(false)
+  }
 })
 
 app.on('before-quit', () => { isQuitting = true })
