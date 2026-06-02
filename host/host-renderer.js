@@ -168,7 +168,11 @@ async function init() {
 
   socket.on('connect',      () => { setStatus('Connexion...'); socket.emit('register-host') })
   socket.on('registered',   () => setStatus('Prêt — en attente d\'un viewer...'))
-  socket.on('viewer-ready', () => { setStatus('Viewer connecté — démarrage...'); startStreaming() })
+  socket.on('viewer-ready', () => {
+    setStatus('Viewer connecté — démarrage...')
+    window.remotelink.minimizeWindow()  // se minimise dès qu'un viewer arrive
+    startStreaming()
+  })
 
   socket.on('answer', async (data) => {
     if (!peerConnection) return
