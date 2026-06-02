@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>RemoteLink</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #0f0f0f; color: #fff; font-family: 'Roboto', sans-serif; height: 100vh; overflow: hidden; touch-action: none; }
+
+    /* ── Connexion ── */
+    #connect-view {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100vh; gap: 28px; padding: 24px;
+    }
+    h1 { font-size: 1.8rem; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; }
+    #status { font-size: .9rem; color: #888; text-align: center; min-height: 1.2em; }
+    #status.connected { color: #4caf50; } #status.error { color: #f44336; }
+    #btn-connect {
+      padding: 16px 56px; font-size: 1.1rem;
+      background: #1976d2; color: #fff;
+      border: none; border-radius: 8px;
+      min-width: 200px; cursor: pointer;
+    }
+    #btn-connect:disabled { background: #333; color: #666; }
+
+    /* ── Stream ── */
+    #stream-view { display: none; position: fixed; inset: 0; background: #000; }
+    #stream-view.active { display: block; }
+
+    video#screen {
+      width: 100%; height: 100%;
+      object-fit: contain; display: block;
+      outline: none; touch-action: none;
+    }
+
+    /* ── HUD stats ── */
+    #hud {
+      position: fixed; top: 12px; left: 12px;
+      background: rgba(0,0,0,.55); color: #0f0;
+      font-family: monospace; font-size: 11px;
+      padding: 3px 8px; border-radius: 4px;
+      pointer-events: none; z-index: 110;
+    }
+
+    /* ── Bouton contrôle flottant ── */
+    #btn-ctrl {
+      position: fixed; bottom: 24px; right: 20px;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: rgba(25,118,210,.75);
+      border: 2px solid rgba(255,255,255,.2);
+      color: #fff; font-size: 22px;
+      z-index: 200; cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0,0,0,.5);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s;
+    }
+    #btn-ctrl.released { background: rgba(76,175,80,.75); }
+
+    /* ── Bouton explorateur ── */
+    #btn-explorer {
+      position: fixed; bottom: 24px; right: 84px;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: rgba(0,0,0,.6);
+      border: 2px solid rgba(255,255,255,.15);
+      color: #ccc; font-size: 22px;
+      z-index: 200; cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0,0,0,.5);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Panel explorateur ── */
+    #file-panel {
+      position: fixed; top: 0; right: -340px;
+      width: 340px; height: 100vh;
+      background: #141414; border-left: 1px solid #2a2a2a;
+      display: flex; flex-direction: column;
+      z-index: 300; transition: right .25s ease;
+      font-size: .82rem;
+    }
+    #file-panel.open { right: 0; }
+    #fp-header { display: flex; align-items: center; gap: 8px; padding: 12px; background: #1a1a1a; border-bottom: 1px solid #222; flex-shrink: 0; }
+    #fp-title { flex: 1; font-weight: 500; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #btn-fp-close { background: none; border: none; color: #666; font-size: 20px; cursor: pointer; padding: 6px 8px; }
+    #fp-breadcrumb { display: flex; flex-wrap: wrap; gap: 2px; padding: 8px 10px; background: #111; border-bottom: 1px solid #1e1e1e; flex-shrink: 0; min-height: 36px; align-items: center; overflow-x: auto; }
+    .crumb { color: #1976d2; cursor: pointer; padding: 4px 6px; border-radius: 3px; white-space: nowrap; }
+    .crumb:hover { background: #1e3a5f; }
+    .crumb-sep { color: #444; }
+    #fp-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+    .fp-entry { display: flex; align-items: center; gap: 10px; padding: 12px; cursor: pointer; border-bottom: 1px solid #1a1a1a; position: relative; }
+    .fp-entry:active { background: #1e1e1e; }
+    .fp-icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+    .fp-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ddd; }
+    .fp-size { color: #555; flex-shrink: 0; font-size: .75rem; }
+    .fp-entry.downloading .fp-name { color: #1976d2; }
+    .fp-progress { height: 2px; background: #1976d2; position: absolute; bottom: 0; left: 0; transition: width .1s; }
+    #fp-status { padding: 8px 12px; background: #111; border-top: 1px solid #1e1e1e; color: #666; font-size: .75rem; min-height: 28px; flex-shrink: 0; }
+    #fp-status.ok { color: #4caf50; } #fp-status.err { color: #f44336; }
+
+    /* ── Overlay navigation ── */
+    #overlay-released { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 150; }
+    #overlay-released.visible { display: flex; }
+    #overlay-released h2 { font-size: 1.3rem; font-weight: 300; letter-spacing: 2px; }
+    #overlay-released p  { font-size: .9rem; color: #aaa; text-align: center; padding: 0 32px; }
+
+    /* ── Badge reconnexion ── */
+    #reconnect-badge { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); background: rgba(0,0,0,.8); color: #f44336; padding: 16px 32px; border-radius: 8px; z-index: 400; }
+    #reconnect-badge.visible { display: block; }
+  </style>
+</head>
+<body>
+
+  <div id="connect-view">
+    <h1>RemoteLink</h1>
+    <p id="status">Prêt</p>
+    <button id="btn-connect">Connecter</button>
+  </div>
+
+  <div id="stream-view">
+    <video id="screen" autoplay playsinline></video>
+    <div id="hud">-- fps</div>
+
+    <!-- Bouton contrôle flottant -->
+    <button id="btn-ctrl" title="Contrôle ON/OFF">🖱</button>
+
+    <!-- Bouton explorateur -->
+    <button id="btn-explorer" title="Fichiers PC">📁</button>
+
+    <!-- Panel explorateur -->
+    <div id="file-panel">
+      <div id="fp-header">
+        <span id="fp-title">Explorateur</span>
+        <button id="btn-fp-close">✕</button>
+      </div>
+      <div id="fp-breadcrumb"></div>
+      <div id="fp-list"></div>
+      <div id="fp-status"></div>
+    </div>
+
+    <!-- Overlay navigation -->
+    <div id="overlay-released">
+      <h2>Mode Navigation</h2>
+      <p>Appuyez sur 🖱 pour reprendre le contrôle du PC</p>
+    </div>
+
+    <div id="reconnect-badge">Reconnexion...</div>
+  </div>
+
+  <script src="socket.io.min.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
