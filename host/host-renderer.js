@@ -23,7 +23,7 @@ function setStatus(msg, type = '') {
 function loadSocketIO() {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script')
-    script.src = '../node_modules/socket.io-client/dist/socket.io.min.js'
+    script.src = './node_modules/socket.io-client/dist/socket.io.min.js'
     script.onload = resolve
     script.onerror = reject
     document.head.appendChild(script)
