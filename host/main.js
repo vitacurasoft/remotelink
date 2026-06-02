@@ -1,6 +1,42 @@
 const { app, BrowserWindow, desktopCapturer, ipcMain, screen, Tray, Menu, nativeImage } = require('electron')
 const path = require('path')
+const fs   = require('fs')
 const inputController = require('./input-controller')
+
+const MAX_FILE_BYTES = 100 * 1024 * 1024  // 100 MB
+
+// Liste un répertoire ou les lecteurs Windows si chemin vide
+ipcMain.handle('fs-list', async (_, dirPath) => {
+  try {
+    if (!dirPath) {
+      const drives = []
+      for (const letter of 'CDEFGHIJKLMNOPQRSTUVWXYZ') {
+        try { fs.accessSync(`${letter}:\\`); drives.push({ name: `${letter}:`, type: 'drive', path: `${letter}:\\`, size: 0 }) } catch {}
+      }
+      return { ok: true, path: '', entries: drives }
+    }
+    const raw = fs.readdirSync(dirPath, { withFileTypes: true })
+    const entries = []
+    for (const d of raw) {
+      try {
+        const full = path.join(dirPath, d.name)
+        entries.push({ name: d.name, type: d.isDirectory() ? 'dir' : 'file', path: full, size: d.isFile() ? fs.statSync(full).size : 0 })
+      } catch {}
+    }
+    entries.sort((a, b) => a.type !== b.type ? (a.type === 'dir' ? -1 : 1) : a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }))
+    return { ok: true, path: dirPath, entries }
+  } catch (e) { return { ok: false, error: e.message } }
+})
+
+// Lit un fichier et retourne son contenu en base64
+ipcMain.handle('fs-read', async (_, filePath) => {
+  try {
+    const stat = fs.statSync(filePath)
+    if (stat.size > MAX_FILE_BYTES) return { ok: false, error: `Fichier trop grand (max 100 Mo)` }
+    const data = fs.readFileSync(filePath)
+    return { ok: true, name: path.basename(filePath), data: data.toString('base64'), size: stat.size }
+  } catch (e) { return { ok: false, error: e.message } }
+})
 
 let win  = null
 let tray = null

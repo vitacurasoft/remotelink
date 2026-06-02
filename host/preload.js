@@ -7,5 +7,7 @@ contextBridge.exposeInMainWorld('remotelink', {
   setTrayStatus:      (status) => ipcRenderer.send('tray-status', status),
   hideWindow:         () => ipcRenderer.send('hide-window'),
   getAutostart:       () => ipcRenderer.invoke('get-autostart'),
-  setAutostart:       (enabled) => ipcRenderer.send('set-autostart', enabled)
+  setAutostart:       (enabled) => ipcRenderer.send('set-autostart', enabled),
+  listDirectory:      (path) => ipcRenderer.invoke('fs-list', path),
+  readFile:           (path) => ipcRenderer.invoke('fs-read', path)
 })

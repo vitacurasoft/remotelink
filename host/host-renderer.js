@@ -140,7 +140,41 @@ async function startStreaming() {
   inputChannel = peerConnection.createDataChannel('input', { ordered: true })
   inputChannel.onopen    = () => console.log('[DataChannel] ouvert')
   inputChannel.onmessage = (e) => {
-    try { window.remotelink.sendInput(JSON.parse(e.data)) } catch {}
+    try {
+      const msg = JSON.parse(e.data)
+      if (['mousemove','mousedown','mouseup','wheel','keydown'].includes(msg.type)) {
+        window.remotelink.sendInput(msg)
+      } else {
+        handleFsRequest(msg)
+      }
+    } catch {}
+  }
+
+  // Envoie un message au client via DataChannel
+  function sendToClient(data) {
+    if (inputChannel && inputChannel.readyState === 'open') {
+      try { inputChannel.send(JSON.stringify(data)) } catch {}
+    }
+  }
+
+  // Gère les requêtes explorateur de fichiers
+  async function handleFsRequest(msg) {
+    if (msg.type === 'fs-list') {
+      const result = await window.remotelink.listDirectory(msg.path || '')
+      sendToClient({ type: 'fs-list-res', id: msg.id, ...result })
+    } else if (msg.type === 'fs-read') {
+      const result = await window.remotelink.readFile(msg.path)
+      if (!result.ok) { sendToClient({ type: 'fs-read-err', id: msg.id, error: result.error }); return }
+      // Envoie en chunks de 60KB (base64) pour rester sous la limite DataChannel
+      const CHUNK = 60 * 1024
+      const data  = result.data
+      const total = Math.ceil(data.length / CHUNK)
+      sendToClient({ type: 'fs-read-start', id: msg.id, name: result.name, size: result.size, total })
+      for (let i = 0; i < total; i++) {
+        sendToClient({ type: 'fs-read-chunk', id: msg.id, i, d: data.slice(i * CHUNK, (i + 1) * CHUNK) })
+      }
+      sendToClient({ type: 'fs-read-end', id: msg.id, name: result.name })
+    }
   }
 
   localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream))

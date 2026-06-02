@@ -7,112 +7,108 @@
   <title>RemoteLink</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0f0f0f; color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
 
-    body {
-      background: #0f0f0f;
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    /* ── Écran de connexion ── */
-    #connect-view {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      gap: 24px;
-    }
+    /* ── Connexion ── */
+    #connect-view { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 24px; }
     h1 { font-size: 2rem; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; }
-    #status { font-size: 0.9rem; color: #888; min-height: 1.2em; }
-    #status.connected { color: #4caf50; }
-    #status.error     { color: #f44336; }
-    #btn-connect {
-      padding: 14px 48px; font-size: 1.1rem;
-      background: #1976d2; color: #fff;
-      border: none; border-radius: 6px; cursor: pointer;
-    }
-    #btn-connect:hover    { background: #1565c0; }
-    #btn-connect:disabled { background: #333; cursor: default; color: #666; }
+    #status { font-size: .9rem; color: #888; }
+    #status.connected { color: #4caf50; } #status.error { color: #f44336; }
+    #btn-connect { padding: 14px 48px; font-size: 1.1rem; background: #1976d2; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    #btn-connect:hover { background: #1565c0; } #btn-connect:disabled { background: #333; color: #666; cursor: default; }
 
-    /* ── Écran streaming ── */
-    #stream-view {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: #000;
-      z-index: 100;
-    }
+    /* ── Stream ── */
+    #stream-view { display: none; position: fixed; inset: 0; background: #000; z-index: 100; }
     #stream-view.active { display: block; }
-
-    video#screen {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
-      outline: none;
-      cursor: none;
-    }
+    video#screen { width: 100%; height: 100%; object-fit: contain; display: block; outline: none; cursor: none; }
     video#screen.released { cursor: default; }
 
-    /* ── HUD stats ── */
-    #hud {
-      position: fixed;
-      top: 10px; right: 12px;
-      background: rgba(0,0,0,0.5);
-      color: #0f0;
-      font-family: monospace; font-size: 11px;
-      padding: 3px 8px; border-radius: 4px;
-      pointer-events: none; z-index: 110;
+    /* ── Bouton explorateur ── */
+    #btn-explorer {
+      position: fixed; top: 10px; left: 12px;
+      background: rgba(0,0,0,0.55); border: 1px solid #444;
+      color: #ccc; font-size: 18px;
+      width: 38px; height: 38px; border-radius: 6px;
+      cursor: pointer; z-index: 210; transition: background .2s;
+    }
+    #btn-explorer:hover { background: rgba(30,30,30,.9); }
+
+    /* ── Panel explorateur ── */
+    #file-panel {
+      position: fixed; top: 0; right: -340px;
+      width: 340px; height: 100vh;
+      background: #141414; border-left: 1px solid #2a2a2a;
+      display: flex; flex-direction: column;
+      z-index: 200; transition: right .25s ease;
+      font-size: .82rem;
+    }
+    #file-panel.open { right: 0; }
+
+    #fp-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border-bottom: 1px solid #222;
+      background: #1a1a1a; flex-shrink: 0;
+    }
+    #fp-header span { flex: 1; font-weight: 500; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #btn-fp-close { background: none; border: none; color: #666; font-size: 16px; cursor: pointer; padding: 4px; }
+    #btn-fp-close:hover { color: #aaa; }
+
+    /* Breadcrumb */
+    #fp-breadcrumb {
+      display: flex; flex-wrap: wrap; gap: 2px;
+      padding: 6px 10px; background: #111; border-bottom: 1px solid #1e1e1e;
+      flex-shrink: 0; min-height: 32px; align-items: center;
+    }
+    .crumb { color: #1976d2; cursor: pointer; padding: 2px 4px; border-radius: 3px; white-space: nowrap; }
+    .crumb:hover { background: #1e3a5f; }
+    .crumb-sep { color: #444; }
+
+    /* Liste */
+    #fp-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+    #fp-list::-webkit-scrollbar { width: 6px; }
+    #fp-list::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+    .fp-entry {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px; cursor: pointer;
+      border-bottom: 1px solid #1a1a1a;
+      transition: background .1s;
+    }
+    .fp-entry:hover { background: #1e1e1e; }
+    .fp-icon { font-size: 14px; flex-shrink: 0; width: 18px; text-align: center; }
+    .fp-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ddd; }
+    .fp-size { color: #555; flex-shrink: 0; font-size: .75rem; }
+    .fp-entry.downloading .fp-name { color: #1976d2; }
+
+    /* Barre de progression téléchargement */
+    .fp-progress {
+      height: 2px; background: #1976d2;
+      position: absolute; bottom: 0; left: 0;
+      transition: width .1s;
     }
 
-    /* ── Overlay mode navigation ── */
-    #overlay-released {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 16px;
-      z-index: 120;
+    /* Status panel */
+    #fp-status {
+      padding: 8px 12px; background: #111; border-top: 1px solid #1e1e1e;
+      color: #666; font-size: .75rem; min-height: 28px; flex-shrink: 0;
     }
+    #fp-status.ok  { color: #4caf50; }
+    #fp-status.err { color: #f44336; }
+
+    /* ── HUD ── */
+    #hud { position: fixed; top: 10px; right: 12px; background: rgba(0,0,0,.5); color: #0f0; font-family: monospace; font-size: 11px; padding: 3px 8px; border-radius: 4px; pointer-events: none; z-index: 110; }
+
+    /* ── Overlays ── */
+    #overlay-released { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 120; }
     #overlay-released.visible { display: flex; }
     #overlay-released h2 { font-size: 1.4rem; font-weight: 300; letter-spacing: 2px; }
-    #overlay-released p  { font-size: 0.9rem; color: #aaa; }
-    .kbd {
-      display: inline-block;
-      background: #333; border: 1px solid #555;
-      border-radius: 4px; padding: 2px 8px;
-      font-family: monospace;
-    }
+    #overlay-released p  { font-size: .9rem; color: #aaa; }
+    .kbd { display: inline-block; background: #333; border: 1px solid #555; border-radius: 4px; padding: 2px 8px; font-family: monospace; }
 
-    /* ── Toast 1er Échap ── */
-    #toast-esc {
-      display: none;
-      position: fixed;
-      bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.8);
-      color: #fff; font-size: 0.82rem;
-      padding: 8px 20px; border-radius: 20px;
-      pointer-events: none; white-space: nowrap;
-      z-index: 130;
-    }
+    #toast-esc { display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.8); color: #fff; font-size: .82rem; padding: 8px 20px; border-radius: 20px; pointer-events: none; white-space: nowrap; z-index: 130; }
     #toast-esc.visible { display: block; }
 
-    /* ── Badge reconnexion ── */
-    #reconnect-badge {
-      display: none;
-      position: fixed;
-      top: 50%; left: 50%; transform: translate(-50%,-50%);
-      background: rgba(0,0,0,0.75);
-      color: #f44336; padding: 16px 32px;
-      border-radius: 8px; font-size: 1rem;
-      z-index: 140;
-    }
+    #reconnect-badge { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); background: rgba(0,0,0,.75); color: #f44336; padding: 16px 32px; border-radius: 8px; z-index: 140; }
     #reconnect-badge.visible { display: block; }
   </style>
 </head>
@@ -127,6 +123,22 @@
   <div id="stream-view">
     <video id="screen" autoplay playsinline tabindex="0"></video>
     <div id="hud">-- fps</div>
+
+    <!-- Bouton explorateur -->
+    <button id="btn-explorer" title="Explorateur de fichiers PC">📁</button>
+
+    <!-- Panel explorateur -->
+    <div id="file-panel">
+      <div id="fp-header">
+        <span id="fp-title">Explorateur</span>
+        <button id="btn-fp-close">✕</button>
+      </div>
+      <div id="fp-breadcrumb"></div>
+      <div id="fp-list"></div>
+      <div id="fp-status"></div>
+    </div>
+
+    <!-- Overlays -->
     <div id="overlay-released">
       <h2>Mode Navigation</h2>
       <p>Vous contrôlez la tablette</p>
