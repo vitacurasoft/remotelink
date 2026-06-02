@@ -1,5 +1,5 @@
-// URL du serveur de signalisation (à remplacer par l'URL Render après déploiement)
-const SIGNALING_URL = 'http://localhost:3000'
+// Serveur de signalisation hébergé sur Render
+const SIGNALING_URL = 'https://remotelink-h336.onrender.com'
 
 const STUN_SERVERS = {
   iceServers: [
