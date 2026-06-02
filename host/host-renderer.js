@@ -142,9 +142,10 @@ async function startStreaming() {
     if (state === 'connected') {
       await applyBitrateLimit(peerConnection)
       startStats(peerConnection)
-      window.remotelink.minimizeWindow()  // se minimise quand le streaming commence
+      window.remotelink.setTrayStatus('Streaming en cours ●')
     } else if (state === 'disconnected' || state === 'failed') {
       setStatus('Viewer déconnecté', 'error')
+      window.remotelink.setTrayStatus('En attente...')
       cleanup()
     }
   }
